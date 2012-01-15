@@ -1,0 +1,10 @@
+This is a very simple daemon that reads the pflog device of your choice, (or
+pflog0 if not specified) formats it somewhat more human-readably and pushes
+this to the syslog LOG_NOTICE facility.
+
+Things I still might implement:
+	- custom filter expressions to pcap
+
+I make no guarantees for ever implementing this.
+
+ - Staffan Thomén <duck@shangtai.net>
