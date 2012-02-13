@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h> /* strerror */
+#include <limits.h> /* _POSIX_PATH_MAX */
 
 #include <pcap.h>
 
@@ -29,9 +30,13 @@
 #include "str.h"
 
 #define PROGNAME "pfloggerd"
-#define VERSION "1.0"
-#define LOGDEVICE "pflog0"
+#define VERSION "1.1"
+#define LOGDEFDEV "pflog0"
 #define LOGDEVMAX 10
+
+#define PID_PATH_MAX _POSIX_PATH_MAX
+/* XXX this might not work everywhere */
+#define PID_STR_MAX sizeof(pid_t)*8
 
 char errbuf[PCAP_ERRBUF_SIZE];
 
@@ -39,7 +44,9 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 
 void usage()
 {
-	printf("Packet filter to syslog bridge, v%s\n\nUsage: %s [-h] [-i <logdevice>]\n", VERSION, PROGNAME);
+	printf("Packet filter to syslog bridge, v%s\n\n"
+		"Usage: %s [-h] [-p <pidfile>] [-i <logdevice>]\n",
+		VERSION, PROGNAME);
 	exit(EXIT_SUCCESS);
 }
 
@@ -50,14 +57,22 @@ int main(int argc, char **argv)
 
 	extern char *optarg;
 	extern int optind;
-	int ch, iflag=0;
-	char lflag[LOGDEVMAX];
+	int ch, iflag=0, pflag=0;
+	char iarg[LOGDEVMAX];
+	char parg[PID_PATH_MAX];
 
-	while ((ch=getopt(argc, argv, "hi:")) != -1) {
+	char pidstr[PID_STR_MAX];
+	FILE *pidfile;
+
+	while ((ch=getopt(argc, argv, "fhi:p:")) != -1) {
 		switch (ch) {
+			case 'p':
+				pflag=1;
+				strncpy(parg, optarg, PID_PATH_MAX);
+				break;
 			case 'i':
 				iflag=1;
-				strncpy(lflag, optarg, LOGDEVMAX);
+				strncpy(iarg, optarg, LOGDEVMAX);
 				break;
 			case 'h':
 				usage();
@@ -66,16 +81,23 @@ int main(int argc, char **argv)
 	}
 
 	if (!iflag)
-		strncpy(lflag, LOGDEVICE, LOGDEVMAX);
+		strncpy(iarg, LOGDEFDEV, LOGDEVMAX);
 
 	argc-=optind;
 	argv+=optind;
 
 	/* open pflog device */
 
-	if ((ldev=pcap_open_live(LOGDEVICE, 160, 1, 1, (char *)&errbuf))==NULL) {
+	if ((ldev=pcap_open_live(iarg, 160, 1, 1, (char *)&errbuf))==NULL) {
 		fprintf(stderr, "pcap_open_live(): %s\n", errbuf);
 		return 1;
+	}
+
+	if (pflag) {
+		if ((pidfile=fopen(parg, "w"))==NULL) {
+			fprintf(stderr, "Can't open pidfile `%s'\n", parg);
+			return -1;
+		}
 	}
 
 	switch ((child=fork())) {
@@ -85,10 +107,22 @@ int main(int argc, char **argv)
 			fprintf(stderr, "fork(): %s\n", strerror(errno));
 			return 1;
 		default:
+			if (pflag) {
+				sprintf(pidstr, "%d", child);
+
+				if (fwrite(pidstr, strlen(pidstr), 1, pidfile)!=1) { /* rv:count */
+					fclose(pidfile);
+					return -1;
+				}
+
+				fclose(pidfile);
+			}
 			return 0;
 	}
 
-	pcap_loop(ldev, -1, packet_handler, NULL); 
+	if (pcap_loop(ldev, -1, packet_handler, NULL) < 0) { 
+		syslog(LOG_ALERT, "Error in main packet loop: %s", errbuf);
+	}
 
 	pcap_close(ldev);
 

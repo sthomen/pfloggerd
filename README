@@ -1,10 +1,16 @@
+pfloggerd -- a pflog to syslog bridge by Staffan Thomén <duck@shangtai.net>
+
 This is a very simple daemon that reads the pflog device of your choice, (or
 pflog0 if not specified) formats it somewhat more human-readably and pushes
 this to the syslog LOG_NOTICE facility.
 
-Things I still might implement:
-	- custom filter expressions to pcap
+TODO:
+ - custom filter expressions to pcap
 
-I make no guarantees for ever implementing this.
-
- - Staffan Thomén <duck@shangtai.net>
+What's new in 1.1
+=================
+ * -i flag actually works
+ * -p flag for creating a pidfile (rc.d usage)
+ * A message is now sent to syslog in case the daemon quits due to an error
+   from pcap_loop()
+ * Minor tweaks
