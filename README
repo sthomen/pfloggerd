@@ -7,6 +7,11 @@ this to the syslog LOG_NOTICE facility.
 TODO:
  - custom filter expressions to pcap
 
+What's new in 1.2
+=================
+ * Fixed stupid bug where I allowed only 1ms delay in the packet loop
+ * Added pidfile argument to sample rc.d script
+
 What's new in 1.1
 =================
  * -i flag actually works
