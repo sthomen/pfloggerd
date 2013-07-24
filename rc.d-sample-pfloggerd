@@ -8,8 +8,9 @@ $_rc_subr_loaded . /etc/rc.subr
 
 name="pfloggerd"
 rcvar=$name
-command="/usr/local/bin/${name}"
 pidfile="/var/run/${name}.pid"
+command="/usr/local/bin/${name}"
+command_args="-p ${pidfile}"
 
 load_rc_config $name
 run_rc_command "$1"

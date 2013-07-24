@@ -38,6 +38,8 @@
 /* XXX this might not work everywhere */
 #define PID_STR_MAX sizeof(pid_t)*8
 
+short debug=0;
+
 char errbuf[PCAP_ERRBUF_SIZE];
 
 void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
@@ -64,8 +66,11 @@ int main(int argc, char **argv)
 	char pidstr[PID_STR_MAX];
 	FILE *pidfile;
 
-	while ((ch=getopt(argc, argv, "fhi:p:")) != -1) {
+	while ((ch=getopt(argc, argv, "dfhi:p:")) != -1) {
 		switch (ch) {
+			case 'd':
+				debug=1;
+				break;
 			case 'p':
 				pflag=1;
 				strncpy(parg, optarg, PID_PATH_MAX);
@@ -88,7 +93,7 @@ int main(int argc, char **argv)
 
 	/* open pflog device */
 
-	if ((ldev=pcap_open_live(iarg, 160, 1, 1, (char *)&errbuf))==NULL) {
+	if ((ldev=pcap_open_live(iarg, 160, 1, 1000, (char *)&errbuf))==NULL) {
 		fprintf(stderr, "pcap_open_live(): %s\n", errbuf);
 		return 1;
 	}
@@ -144,6 +149,10 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	u_int8_t		action;
 	u_int8_t		reason;
 	u_int8_t		flags=0;
+
+	if (debug) {
+		fprintf(stderr, "packet_handler\n");
+	}
 
 	pf=(struct pfloghdr *)bytes;
 
