@@ -5,6 +5,7 @@
 #include <net/if.h>
 #include <net/pfvar.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 
 struct string_tok {
 	u_int16_t id;
@@ -85,12 +86,24 @@ struct string_tok string_proto[] = {
 	{ IPPROTO_CARP,		"CARP" }
 };
 
+struct string_tok string_tcpflags[] = {
+	{ TH_FIN, "FIN" },
+	{ TH_SYN, "SYN" },
+	{ TH_RST, "RST" },
+	{ TH_PUSH, "PSH" },
+	{ TH_ACK, "ACK" },
+	{ TH_URG, "URG" },
+	{ TH_ECE, "ECE" },
+	{ TH_CWR, "CWR" }
+};
+
 #endif /* _STR_C */
 
 #define STR_DIR_MAX 2
 #define STR_REASON_MAX 15
 #define STR_ACTION_MAX 10
 #define STR_PROTO_MAX 30
+#define STR_TCPFLAGS_MAX 7
 
 const char *str_get(int table, int index);
 
@@ -98,5 +111,6 @@ const char *str_get(int table, int index);
 #define TABLE_REASON 1
 #define TABLE_PROTO 2
 #define TABLE_DIR 3
+#define TABLE_TCPFLAGS 4
 
 #endif /* _STR_H_ */

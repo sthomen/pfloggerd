@@ -105,24 +105,26 @@ int main(int argc, char **argv)
 		}
 	}
 
-	switch ((child=fork())) {
-		case 0:
-			break;
-		case -1:
-			fprintf(stderr, "fork(): %s\n", strerror(errno));
-			return 1;
-		default:
-			if (pflag) {
-				sprintf(pidstr, "%d", child);
+	if (!debug) {
+		switch ((child=fork())) {
+			case 0:
+				break;
+			case -1:
+				fprintf(stderr, "fork(): %s\n", strerror(errno));
+				return 1;
+			default:
+				if (pflag) {
+					sprintf(pidstr, "%d", child);
 
-				if (fwrite(pidstr, strlen(pidstr), 1, pidfile)!=1) { /* rv:count */
+					if (fwrite(pidstr, strlen(pidstr), 1, pidfile)!=1) { /* rv:count */
+						fclose(pidfile);
+						return -1;
+					}
+
 					fclose(pidfile);
-					return -1;
 				}
-
-				fclose(pidfile);
-			}
-			return 0;
+				return 0;
+		}
 	}
 
 	if (pcap_loop(ldev, -1, packet_handler, NULL) < 0) { 
@@ -148,7 +150,10 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	u_int8_t		dir;
 	u_int8_t		action;
 	u_int8_t		reason;
-	u_int8_t		flags=0;
+	char			*flagstr=NULL;
+	const char		*fstr;
+	u_int16_t		fc;
+	u_int8_t		fsize=0;
 
 	if (debug) {
 		fprintf(stderr, "packet_handler\n");
@@ -189,7 +194,24 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 		port_src=tcp->th_sport;
 		port_dst=tcp->th_dport;
 
-		flags=tcp->th_flags;
+		fc=1;
+		do {
+			if (tcp->th_flags & fc) {
+				fstr=str_get(TABLE_TCPFLAGS, fc);
+				fsize=strlen(fstr);
+				if (flagstr == NULL) {
+					flagstr=(char *)malloc(fsize+1);
+					bzero(flagstr, fsize+1);
+				} else {
+					flagstr=(char *)realloc(flagstr, strlen(flagstr)+fsize+2);
+					strncat(flagstr, "/", 1);
+				}
+				strncat(flagstr, fstr, fsize);
+			}
+			fc=fc<<1;
+		} while (fc<=0x80);
+		/* XXX tcp flags are unlikely to change */
+
 	} else if (proto == 17) {	/* UDP */
 		tcp=(struct tcphdr *)bytes;
 
@@ -201,9 +223,20 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 
 	/* action, reason, dir, ip_src, ip_dst, port_src, port_dst, proto */
 
-	syslog(LOG_NOTICE, "%s %s:%d -> %s:%d %s %s %s (0x%x)\n",
-		str_get(TABLE_PROTO, proto), ip_src, ntohs(port_src),
-		ip_dst, ntohs(port_dst), str_get(TABLE_ACTION, action),
-		str_get(TABLE_DIR, dir), str_get(TABLE_REASON, reason), flags);
+	syslog(LOG_NOTICE, "%s: %s%s%s %s:%d -> %s:%d %s %s %s\n",
+		pf->ifname,
+		str_get(TABLE_PROTO, proto),
+		(proto == 6 ? " " : ""),
+		(proto == 6 ? flagstr : ""),
+		ip_src,
+		ntohs(port_src),
+		ip_dst,
+		ntohs(port_dst), 
+		str_get(TABLE_ACTION, action),
+		str_get(TABLE_DIR, dir),
+		str_get(TABLE_REASON, reason));
+
+	if (flagstr != NULL)
+		free(flagstr);
 }
 

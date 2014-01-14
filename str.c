@@ -27,6 +27,11 @@ const char *str_get(int table, int id)
 				if (string_dir[i].id == id)
 					return string_dir[i].string;
 			break;
+		case TABLE_TCPFLAGS:
+			for (i=0;i<=STR_TCPFLAGS_MAX;i++)
+				if (string_tcpflags[i].id == id)
+					return string_tcpflags[i].string;
+			break;
 	}
 	return "<string not found>";
 }
