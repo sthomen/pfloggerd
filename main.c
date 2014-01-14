@@ -226,7 +226,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	}
 
 	if (debug) {
-		fprintf(stderr, "%s: %s%s%s %s:%d -> %s:%d %s %s %s\n",
+		fprintf(stderr, "%s: %s%s%s %s:%d -> %s:%d rule %d:%d %s %s %s\n",
 			pf->ifname,
 			str_get(TABLE_PROTO, proto),
 			(proto == 6 ? " " : ""),
@@ -235,12 +235,14 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 			ntohs(port_src),
 			ip_dst,
 			ntohs(port_dst), 
+			ntohl(pf->rulenr),
+			ntohl(pf->subrulenr),
 			str_get(TABLE_ACTION, action),
 			str_get(TABLE_DIR, dir),
 			str_get(TABLE_REASON, reason));
 	}
 
-	syslog(LOG_NOTICE, "%s: %s%s%s %s:%d -> %s:%d %s %s %s\n",
+	syslog(LOG_NOTICE, "%s: %s%s%s %s:%d -> %s:%d rule %d:%d %s %s %s\n",
 		pf->ifname,
 		str_get(TABLE_PROTO, proto),
 		(proto == 6 ? " " : ""),
@@ -249,6 +251,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 		ntohs(port_src),
 		ip_dst,
 		ntohs(port_dst), 
+		ntohl(pf->rulenr),
+		ntohl(pf->subrulenr),
 		str_get(TABLE_ACTION, action),
 		str_get(TABLE_DIR, dir),
 		str_get(TABLE_REASON, reason));
