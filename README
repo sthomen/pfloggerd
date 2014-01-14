@@ -7,6 +7,11 @@ this to the syslog LOG_NOTICE facility.
 TODO:
  - custom filter expressions to pcap
 
+What's new in 1.3
+=================
+ * Added TCP flag decoding
+ * Added printing of the logging interface to the output (ex0, fxp4, whatever)
+
 What's new in 1.2
 =================
  * Fixed stupid bug where I allowed only 1ms delay in the packet loop

@@ -30,7 +30,7 @@
 #include "str.h"
 
 #define PROGNAME "pfloggerd"
-#define VERSION "1.2"
+#define VERSION "1.3"
 #define LOGDEFDEV "pflog0"
 #define LOGDEVMAX 10
 
@@ -47,8 +47,12 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 void usage()
 {
 	printf("Packet filter to syslog bridge, v%s\n\n"
-		"Usage: %s [-h] [-p <pidfile>] [-i <logdevice>]\n",
-		VERSION, PROGNAME);
+		"Usage: %s [-dh] [-p <pidfile>] [-i <logdevice>]\n\n"
+		"-d             debug (does not detach from console)\n"
+		"-h             this help\n"
+		"-p <pidfile>   use <pidfile> to store server pid\n"
+		"-i <logdevice> read <logdevice> instead of %s\n",
+		VERSION, PROGNAME, LOGDEFDEV);
 	exit(EXIT_SUCCESS);
 }
 
@@ -156,7 +160,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	u_int8_t		fsize=0;
 
 	if (debug) {
-		fprintf(stderr, "packet_handler\n");
+		fprintf(stderr, "In packet_handler()\n");
 	}
 
 	pf=(struct pfloghdr *)bytes;
@@ -221,7 +225,20 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 		/* unknown protocol */
 	}
 
-	/* action, reason, dir, ip_src, ip_dst, port_src, port_dst, proto */
+	if (debug) {
+		fprintf(stderr, "%s: %s%s%s %s:%d -> %s:%d %s %s %s\n",
+			pf->ifname,
+			str_get(TABLE_PROTO, proto),
+			(proto == 6 ? " " : ""),
+			(proto == 6 ? flagstr : ""),
+			ip_src,
+			ntohs(port_src),
+			ip_dst,
+			ntohs(port_dst), 
+			str_get(TABLE_ACTION, action),
+			str_get(TABLE_DIR, dir),
+			str_get(TABLE_REASON, reason));
+	}
 
 	syslog(LOG_NOTICE, "%s: %s%s%s %s:%d -> %s:%d %s %s %s\n",
 		pf->ifname,
