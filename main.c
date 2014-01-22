@@ -34,7 +34,7 @@
 #include "str.h"
 
 #define PROGNAME "pfloggerd"
-#define VERSION "1.3"
+#define VERSION "1.4"
 #define LOGDEFDEV "pflog0"
 #define LOGDEVMAX 10
 
