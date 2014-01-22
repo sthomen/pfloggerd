@@ -1,7 +1,10 @@
 # $Id: Makefile 12 2008-11-22 13:45:26Z duck $
 
+# enable this to not look up dst port names on each line
+#OPTIONS=-DNO_SERVENT
+
 CC=cc
-CFLAGS=-g -Wall -pedantic -ansi
+CFLAGS=-g -Wall -pedantic -ansi $(OPTIONS)
 LDFLAGS=-lpcap
 
 SRCS=str.c main.c

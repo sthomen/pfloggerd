@@ -26,6 +26,10 @@
 
 #include <syslog.h>
 
+#ifndef NO_SERVENT
+#include <netdb.h>
+#endif
+
 /* string lookups */
 #include "str.h"
 
@@ -158,6 +162,10 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	const char		*fstr;
 	u_int16_t		fc;
 	u_int8_t		fsize=0;
+#ifndef NO_SERVENT
+	struct servent		*sent=NULL;
+	char			*sname;
+#endif
 
 	if (debug) {
 		fprintf(stderr, "In packet_handler()\n");
@@ -198,6 +206,14 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 		port_src=tcp->th_sport;
 		port_dst=tcp->th_dport;
 
+#ifndef NO_SERVENT
+		if ((sent=getservbyport(port_dst, "tcp"))==NULL) {
+			if (debug)
+				fprintf(stderr, "getservbyport() failed: %s\n", strerror(errno));
+			sname=NULL;
+		}
+#endif
+
 		fc=1;
 		do {
 			if (tcp->th_flags & fc) {
@@ -221,12 +237,27 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 
 		port_src=tcp->th_sport;
 		port_dst=tcp->th_dport;
+
+#ifndef NO_SERVENT
+		if ((sent=getservbyport(port_dst, "udp"))==NULL) {
+			if (debug)
+				fprintf(stderr, "getservbyport() failed: %s\n", strerror(errno));
+			sname=NULL;
+		}
+#endif
 	} else {
 		/* unknown protocol */
 	}
 
+#ifndef NO_SERVENT
+	if (sent!=NULL) {
+		sname=(char *)malloc(strlen(sent->s_name)+2);
+		sprintf(sname, "(%s)", sent->s_name);
+	}
+#endif
+
 	if (debug) {
-		fprintf(stderr, "%s: %s%s%s %s:%d -> %s:%d rule %d:%d %s %s %s\n",
+		fprintf(stderr, "%s: %s%s%s %s:%d -> %s:%d%s rule %d:%d %s %s %s\n",
 			pf->ifname,
 			str_get(TABLE_PROTO, proto),
 			(proto == 6 ? " " : ""),
@@ -235,6 +266,11 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 			ntohs(port_src),
 			ip_dst,
 			ntohs(port_dst), 
+#ifndef NO_SERVENT
+			(sname == NULL ? "" : sname),
+#else
+			"",
+#endif
 			ntohl(pf->rulenr),
 			ntohl(pf->subrulenr),
 			str_get(TABLE_ACTION, action),
@@ -242,7 +278,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 			str_get(TABLE_REASON, reason));
 	}
 
-	syslog(LOG_NOTICE, "%s: %s%s%s %s:%d -> %s:%d rule %d:%d %s %s %s\n",
+	syslog(LOG_NOTICE, "%s: %s%s%s %s:%d -> %s:%d%s rule %d:%d %s %s %s\n",
 		pf->ifname,
 		str_get(TABLE_PROTO, proto),
 		(proto == 6 ? " " : ""),
@@ -251,6 +287,11 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 		ntohs(port_src),
 		ip_dst,
 		ntohs(port_dst), 
+#ifndef NO_SERVENT
+		(sname == NULL ? "" : sname),
+#else
+			"",
+#endif
 		ntohl(pf->rulenr),
 		ntohl(pf->subrulenr),
 		str_get(TABLE_ACTION, action),
@@ -259,5 +300,10 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 
 	if (flagstr != NULL)
 		free(flagstr);
+
+#ifndef NO_SERVENT
+	if (sname != NULL)
+		free(sname);
+#endif
 }
 
