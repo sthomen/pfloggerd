@@ -291,8 +291,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 #else
 			"",
 #endif
-			ntohl(pf->rulenr),
-			ntohl(pf->subrulenr),
+			ntohl(pf->rulenr) + 2,	/* XXX somehow these are two less than something useful */
+			ntohl(pf->subrulenr) + 2,
 			str_get(TABLE_ACTION, action),
 			str_get(TABLE_DIR, dir),
 			str_get(TABLE_REASON, reason));
