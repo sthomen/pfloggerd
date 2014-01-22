@@ -42,6 +42,10 @@
 /* XXX this might not work everywhere */
 #define PID_STR_MAX sizeof(pid_t)*8
 
+/* XXX presumably log messages aren't loger than this */
+#define LOG_MAX		256
+#define PSTR_MAX	6	/* 65536 + \0 */
+
 short debug=0;
 
 char errbuf[PCAP_ERRBUF_SIZE];
@@ -146,7 +150,7 @@ int main(int argc, char **argv)
 
 void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
-	struct pfloghdr		*pf;
+	/* ip */
 	struct ip		*ip;
 	struct ip6_hdr		*ip6;
 	struct tcphdr		*tcp; /* or udp, since the ports are the same */
@@ -155,9 +159,13 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	u_int8_t		proto;
 	u_int16_t		port_src, port_dst;
 
+	/* pf */
+	struct pfloghdr		*pf;
 	u_int8_t		dir;
 	u_int8_t		action;
 	u_int8_t		reason;
+
+	/* formatting */
 	char			*flagstr=NULL;
 	const char		*fstr;
 	u_int16_t		fc;
@@ -166,10 +174,12 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	struct servent		*sent=NULL;
 	char			*sname;
 #endif
+	static char		out[LOG_MAX];
+	static char		pstr_src[PSTR_MAX];
+	static char		pstr_dst[PSTR_MAX];
 
-	if (debug) {
+	if (debug)
 		fprintf(stderr, "In packet_handler()\n");
-	}
 
 	pf=(struct pfloghdr *)bytes;
 
@@ -246,6 +256,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 		}
 #endif
 	} else {
+		port_src=0;
+		port_dst=0;
 		/* unknown protocol */
 	}
 
@@ -256,16 +268,23 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	}
 #endif
 
-	if (debug) {
-		fprintf(stderr, "%s: %s%s%s %s:%d -> %s:%d%s rule %d:%d %s %s %s\n",
+	if (port_src!=0) {
+		snprintf(pstr_src, PSTR_MAX, ":%d", ntohs(port_src));
+		snprintf(pstr_dst, PSTR_MAX, ":%d", ntohs(port_dst));
+	} else {
+		pstr_src[0]='\0';
+		pstr_dst[0]='\0';
+	}
+
+	snprintf(out, LOG_MAX, "%s: %s%s%s %s%s -> %s%s%s rule %d:%d %s %s %s\n",
 			pf->ifname,
 			str_get(TABLE_PROTO, proto),
 			(proto == 6 ? " " : ""),
 			(proto == 6 ? flagstr : ""),
 			ip_src,
-			ntohs(port_src),
+			pstr_src,
 			ip_dst,
-			ntohs(port_dst), 
+			pstr_dst, 
 #ifndef NO_SERVENT
 			(sname == NULL ? "" : sname),
 #else
@@ -276,27 +295,10 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 			str_get(TABLE_ACTION, action),
 			str_get(TABLE_DIR, dir),
 			str_get(TABLE_REASON, reason));
-	}
+	if (debug)
+		fprintf(stderr, "%s", out);
 
-	syslog(LOG_NOTICE, "%s: %s%s%s %s:%d -> %s:%d%s rule %d:%d %s %s %s\n",
-		pf->ifname,
-		str_get(TABLE_PROTO, proto),
-		(proto == 6 ? " " : ""),
-		(proto == 6 ? flagstr : ""),
-		ip_src,
-		ntohs(port_src),
-		ip_dst,
-		ntohs(port_dst), 
-#ifndef NO_SERVENT
-		(sname == NULL ? "" : sname),
-#else
-			"",
-#endif
-		ntohl(pf->rulenr),
-		ntohl(pf->subrulenr),
-		str_get(TABLE_ACTION, action),
-		str_get(TABLE_DIR, dir),
-		str_get(TABLE_REASON, reason));
+	syslog(LOG_NOTICE, "%s", out);
 
 	if (flagstr != NULL)
 		free(flagstr);
