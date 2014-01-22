@@ -172,7 +172,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	u_int8_t		fsize=0;
 #ifndef NO_SERVENT
 	struct servent		*sent=NULL;
-	char			*sname;
+	char			*sname=NULL;
 #endif
 	static char		out[LOG_MAX];
 	static char		pstr_src[PSTR_MAX];
@@ -258,6 +258,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	} else {
 		port_src=0;
 		port_dst=0;
+		sname=NULL;
 		/* unknown protocol */
 	}
 
