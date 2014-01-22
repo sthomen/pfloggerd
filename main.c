@@ -200,7 +200,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 		/* unknown IP version */
 	}
 
-	if (proto == 6) {		/* TCP */
+	if (proto == IPPROTO_TCP) {
 		tcp=(struct tcphdr *)bytes;
 
 		port_src=tcp->th_sport;
@@ -232,7 +232,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 		} while (fc<=0x80);
 		/* XXX tcp flags are unlikely to change */
 
-	} else if (proto == 17) {	/* UDP */
+	} else if (proto == IPPROTO_UDP) {
 		tcp=(struct tcphdr *)bytes;
 
 		port_src=tcp->th_sport;
