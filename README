@@ -7,6 +7,18 @@ this to the syslog LOG_NOTICE facility.
 TODO:
  - custom filter expressions to pcap
 
+What's new in 1.4.1
+===================
+ * Bugfixes
+ * Forgot "what's new" for 1.4
+
+What's new in 1.4
+=================
+ * Don't print port numbers for logged packets that don't have a ported protocol
+ * Optionally disabled (compile time) lookup of the destination port service
+ * Display rule and subrule number
+ * Bugfixes
+
 What's new in 1.3
 =================
  * Added TCP flag decoding
