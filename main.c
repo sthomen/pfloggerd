@@ -270,8 +270,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 #endif
 
 	if (port_src!=0) {
-		snprintf(pstr_src, PSTR_MAX, ":%d", ntohs(port_src));
-		snprintf(pstr_dst, PSTR_MAX, ":%d", ntohs(port_dst));
+		snprintf(pstr_src, PSTR_MAX, ".%d", ntohs(port_src));
+		snprintf(pstr_dst, PSTR_MAX, ".%d", ntohs(port_dst));
 	} else {
 		pstr_src[0]='\0';
 		pstr_dst[0]='\0';
