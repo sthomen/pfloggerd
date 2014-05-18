@@ -177,6 +177,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	static char		out[LOG_MAX];
 	static char		pstr_src[PSTR_MAX];
 	static char		pstr_dst[PSTR_MAX];
+	static char		pstr_sep;
 
 	if (debug)
 		fprintf(stderr, "In packet_handler()\n");
@@ -192,6 +193,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 	ip=(struct ip *)bytes;
 
 	if (ip->ip_v == 4) {
+		pstr_sep=':';
+
 		inet_ntop(AF_INET, &ip->ip_src, ip_src, INET6_ADDRSTRLEN);
 		inet_ntop(AF_INET, &ip->ip_dst, ip_dst, INET6_ADDRSTRLEN);
 
@@ -199,6 +202,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 
 		bytes+=(ip->ip_hl*4);	/* skip ip header */
 	} else if (ip->ip_v == 6) {
+		pstr_sep='.';
+
 		ip6=(struct ip6_hdr *)bytes;
 		inet_ntop(AF_INET6, &ip6->ip6_src, ip_src, INET6_ADDRSTRLEN);
 		inet_ntop(AF_INET6, &ip6->ip6_dst, ip_dst, INET6_ADDRSTRLEN);
@@ -270,8 +275,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
 #endif
 
 	if (port_src!=0) {
-		snprintf(pstr_src, PSTR_MAX, ":%d", ntohs(port_src));
-		snprintf(pstr_dst, PSTR_MAX, ":%d", ntohs(port_dst));
+		snprintf(pstr_src, PSTR_MAX, "%c%d", pstr_sep, ntohs(port_src));
+		snprintf(pstr_dst, PSTR_MAX, "%c%d", pstr_sep, ntohs(port_dst));
 	} else {
 		pstr_src[0]='\0';
 		pstr_dst[0]='\0';
