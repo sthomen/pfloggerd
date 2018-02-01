@@ -7,6 +7,11 @@ this to the syslog LOG_NOTICE facility.
 TODO:
  - custom filter expressions to pcap
 
+What's new in 1.4.2
+===================
+ * Changed the PSTR_MAX define from 6 to 7 so that ports over 9999 are no longer
+   truncated.
+
 What's new in 1.4.1
 ===================
  * Bugfixes
