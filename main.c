@@ -44,7 +44,7 @@
 
 /* XXX presumably log messages aren't loger than this */
 #define LOG_MAX		256
-#define PSTR_MAX	6	/* 65536 + \0 */
+#define PSTR_MAX	7	/* : + 65536 + \0 */
 
 short debug=0;
 
